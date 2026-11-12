@@ -322,9 +322,9 @@ def process_event(event_data: Dict[str, Any], total_stake: float = 100.0) -> Opt
 
     return arb_item
 
-def fetch_live_odds(sport_key: str = "basketball_nba") -> List[Dict[str, Any]]:
+def fetch_live_odds(sport_key: str = "basketball_nba", market: str = "h2h") -> List[Dict[str, Any]]:
     """
-    Fetches live odds from The Odds API.
+    Fetches live odds from The Odds API for specific markets.
     """
     api_key = os.environ.get("ODDS_API_KEY")
     if not api_key:
@@ -334,7 +334,7 @@ def fetch_live_odds(sport_key: str = "basketball_nba") -> List[Dict[str, Any]]:
     params = {
         "apiKey": api_key,
         "regions": "us",
-        "markets": "h2h",
+        "markets": market,
         "oddsFormat": "decimal",
     }
     
@@ -347,6 +347,7 @@ def fetch_live_odds(sport_key: str = "basketball_nba") -> List[Dict[str, Any]]:
 
 def run_engine(
     sport: str = "basketball_nba", 
+    market: str = "h2h",
     output_file: str = "arbs.json", 
     total_stake: float = 100.0, 
     ntfy_topic: Optional[str] = DEFAULT_NTFY_TOPIC,
@@ -356,7 +357,8 @@ def run_engine(
     Executes the arbitrage engine on live odds data.
     """
     print(f"--- Running Sports Arbitrage Tracker (Live) ---")
-    events = fetch_live_odds(sport)
+    print(f"Sport: {sport}, Market: {market}")
+    events = fetch_live_odds(sport, market)
     
     arbs: List[Dict[str, Any]] = []
 
@@ -365,13 +367,29 @@ def run_engine(
 
     for event in events:
         # Standardize The Odds API event format to our engine format
+        standardized_bookmakers = []
+        for b in event.get("bookmakers", []):
+            # Find the market matching the requested market key
+            for m in b.get("markets", []):
+                if m.get("key") == market:
+                    standardized_bookmakers.append({
+                        "key": b.get("key"),
+                        "title": b.get("title"),
+                        "outcomes": [
+                            # Map {name, description, price} -> {name, price}
+                            # Combine player name and description for unique ID
+                            {"name": f"{o.get('name')} - {o.get('description')}", "price": o.get("price")}
+                            for o in m.get("outcomes", [])
+                        ]
+                    })
+        
         standardized_event = {
             "id": event.get("id"),
             "sport": event.get("sport_title"),
             "event": f"{event.get('home_team')} vs {event.get('away_team')}",
             "commence_time": event.get("commence_time"),
-            "market": "h2h",
-            "bookmakers": event.get("bookmakers", [])
+            "market": market,
+            "bookmakers": standardized_bookmakers
         }
         
         arb = process_event(standardized_event, total_stake=total_stake)
@@ -396,6 +414,7 @@ def run_engine(
 def main():
     parser = argparse.ArgumentParser(description="Sports Arbitrage Tracker Engine (Live)")
     parser.add_argument("--sport", default="basketball_nba", help="Sport key for The Odds API")
+    parser.add_argument("--market", default="h2h", help="Market key for The Odds API (e.g., h2h, player_points)")
     parser.add_argument("--output", default="arbs.json", help="Path to output JSON file for arbs")
     parser.add_argument("--stake", type=float, default=100.0, help="Base total stake amount")
     parser.add_argument("--ntfy-topic", default=DEFAULT_NTFY_TOPIC, help="NTFY.sh topic name")
@@ -405,6 +424,7 @@ def main():
 
     run_engine(
         sport=args.sport,
+        market=args.market,
         output_file=args.output,
         total_stake=args.stake,
         ntfy_topic=args.ntfy_topic,
