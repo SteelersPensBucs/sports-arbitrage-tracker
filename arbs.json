@@ -1,0 +1,154 @@
+[
+  {
+    "id": "game_nfl_02",
+    "sport": "NFL",
+    "event": "Kansas City Chiefs vs Buffalo Bills",
+    "commence_time": "2026-11-15T21:25:00Z",
+    "market": "h2h",
+    "roi_percent": 7.44,
+    "implied_prob_total": 0.9307,
+    "total_stake": 100.0,
+    "guaranteed_payout": 107.44,
+    "guaranteed_profit": 7.44,
+    "palp_warning": "Palp Warning",
+    "timestamp": "2026-11-11T20:23:01.806228Z",
+    "outcomes": [
+      {
+        "name": "Kansas City Chiefs",
+        "bookmaker": "fanatics",
+        "bookmaker_title": "Fanatics",
+        "odds_decimal": 2.1,
+        "odds_american": 110,
+        "odds_american_str": "+110",
+        "implied_prob": 0.4762,
+        "raw_stake": 51.16,
+        "payout": 107.44
+      },
+      {
+        "name": "Buffalo Bills",
+        "bookmaker": "betrivers",
+        "bookmaker_title": "BetRivers",
+        "odds_decimal": 2.2,
+        "odds_american": 120,
+        "odds_american_str": "+120",
+        "implied_prob": 0.4545,
+        "raw_stake": 48.84,
+        "payout": 107.45
+      }
+    ]
+  },
+  {
+    "id": "game_nba_01",
+    "sport": "NBA",
+    "event": "Los Angeles Lakers vs Boston Celtics",
+    "commence_time": "2026-11-12T00:30:00Z",
+    "market": "h2h",
+    "roi_percent": 4.94,
+    "implied_prob_total": 0.9529,
+    "total_stake": 100.0,
+    "guaranteed_payout": 104.94,
+    "guaranteed_profit": 4.94,
+    "palp_warning": "Palp Warning",
+    "timestamp": "2026-11-11T20:23:01.805921Z",
+    "outcomes": [
+      {
+        "name": "Los Angeles Lakers",
+        "bookmaker": "fanduel",
+        "bookmaker_title": "FanDuel",
+        "odds_decimal": 2.15,
+        "odds_american": 115,
+        "odds_american_str": "+115",
+        "implied_prob": 0.4651,
+        "raw_stake": 48.81,
+        "payout": 104.94
+      },
+      {
+        "name": "Boston Celtics",
+        "bookmaker": "betmgm",
+        "bookmaker_title": "BetMGM",
+        "odds_decimal": 2.05,
+        "odds_american": 105,
+        "odds_american_str": "+105",
+        "implied_prob": 0.4878,
+        "raw_stake": 51.19,
+        "payout": 104.94
+      }
+    ]
+  },
+  {
+    "id": "game_ufc_03",
+    "sport": "UFC",
+    "event": "Jon Jones vs Stipe Miocic",
+    "commence_time": "2026-11-20T03:00:00Z",
+    "market": "h2h",
+    "roi_percent": 3.85,
+    "implied_prob_total": 0.963,
+    "total_stake": 100.0,
+    "guaranteed_payout": 103.85,
+    "guaranteed_profit": 3.85,
+    "palp_warning": null,
+    "timestamp": "2026-11-11T20:23:01.806402Z",
+    "outcomes": [
+      {
+        "name": "Jon Jones",
+        "bookmaker": "caesars",
+        "bookmaker_title": "Caesars",
+        "odds_decimal": 1.35,
+        "odds_american": -285,
+        "odds_american_str": "-285",
+        "implied_prob": 0.7407,
+        "raw_stake": 76.92,
+        "payout": 103.84
+      },
+      {
+        "name": "Stipe Miocic",
+        "bookmaker": "fanduel",
+        "bookmaker_title": "FanDuel",
+        "odds_decimal": 4.5,
+        "odds_american": 350,
+        "odds_american_str": "+350",
+        "implied_prob": 0.2222,
+        "raw_stake": 23.08,
+        "payout": 103.86
+      }
+    ]
+  },
+  {
+    "id": "game_tennis_04",
+    "sport": "Tennis",
+    "event": "Carlos Alcaraz vs Jannik Sinner",
+    "commence_time": "2026-11-18T14:00:00Z",
+    "market": "h2h",
+    "roi_percent": 2.5,
+    "implied_prob_total": 0.9756,
+    "total_stake": 100.0,
+    "guaranteed_payout": 102.5,
+    "guaranteed_profit": 2.5,
+    "palp_warning": null,
+    "timestamp": "2026-11-11T20:23:01.806568Z",
+    "outcomes": [
+      {
+        "name": "Carlos Alcaraz",
+        "bookmaker": "betmgm",
+        "bookmaker_title": "BetMGM",
+        "odds_decimal": 2.05,
+        "odds_american": 105,
+        "odds_american_str": "+105",
+        "implied_prob": 0.4878,
+        "raw_stake": 50.0,
+        "payout": 102.5
+      },
+      {
+        "name": "Jannik Sinner",
+        "bookmaker": "thescore",
+        "bookmaker_title": "theScore Bet",
+        "odds_decimal": 2.05,
+        "odds_american": 105,
+        "odds_american_str": "+105",
+        "implied_prob": 0.4878,
+        "raw_stake": 50.0,
+        "payout": 102.5
+      }
+    ]
+  }
+]
