@@ -25,6 +25,7 @@ import sys
 import urllib.request
 import urllib.error
 import argparse
+import requests
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Tuple
 
@@ -193,10 +194,18 @@ def process_event(event_data: Dict[str, Any], total_stake: float = 100.0) -> Opt
         bookie_name = b.get("key") or b.get("title", "")
         canonical_key = normalize_bookmaker_key(bookie_name)
         if canonical_key:
+            # Look for outcomes inside markets if not directly available (The Odds API structure)
+            outcomes = b.get("outcomes")
+            if not outcomes:
+                for market in b.get("markets", []):
+                    if market.get("key") == "h2h":
+                        outcomes = market.get("outcomes", [])
+                        break
+            
             filtered_bookmakers.append({
                 "canonical_key": canonical_key,
                 "display_title": b.get("title", canonical_key.title()),
-                "outcomes": b.get("outcomes", [])
+                "outcomes": outcomes or []
             })
 
     if not filtered_bookmakers:
@@ -313,51 +322,70 @@ def process_event(event_data: Dict[str, Any], total_stake: float = 100.0) -> Opt
 
     return arb_item
 
+def fetch_live_odds(sport_key: str = "basketball_nba") -> List[Dict[str, Any]]:
+    """
+    Fetches live odds from The Odds API.
+    """
+    api_key = os.environ.get("ODDS_API_KEY")
+    if not api_key:
+        raise ValueError("ODDS_API_KEY environment variable not set.")
+    
+    url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds"
+    params = {
+        "apiKey": api_key,
+        "regions": "us",
+        "markets": "h2h",
+        "oddsFormat": "decimal",
+    }
+    
+    response = requests.get(url, params=params)
+    if response.status_code != 200:
+        raise Exception(f"Failed to fetch odds: {response.text}")
+    
+    return response.json()
+
+
 def run_engine(
-    input_file: str, 
+    sport: str = "basketball_nba", 
     output_file: str = "arbs.json", 
     total_stake: float = 100.0, 
     ntfy_topic: Optional[str] = DEFAULT_NTFY_TOPIC,
     enable_ntfy: bool = True
 ) -> List[Dict[str, Any]]:
     """
-    Executes the arbitrage engine on the given input odds JSON data.
+    Executes the arbitrage engine on live odds data.
     """
-    if not os.path.exists(input_file):
-        raise FileNotFoundError(f"Input file not found: {input_file}")
-
-    with open(input_file, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    if isinstance(data, dict):
-        events = data.get("events", [data])
-    elif isinstance(data, list):
-        events = data
-    else:
-        raise ValueError("Invalid JSON data format.")
-
+    print(f"--- Running Sports Arbitrage Tracker (Live) ---")
+    events = fetch_live_odds(sport)
+    
     arbs: List[Dict[str, Any]] = []
 
-    print(f"--- Running Sports Arbitrage Tracker ---")
     print(f"Strict Whitelist: {', '.join(sorted(ALLOWED_BOOKMAKERS))}")
     print(f"Processing {len(events)} events...")
 
     for event in events:
-        arb = process_event(event, total_stake=total_stake)
+        # Standardize The Odds API event format to our engine format
+        standardized_event = {
+            "id": event.get("id"),
+            "sport": event.get("sport_title"),
+            "event": f"{event.get('home_team')} vs {event.get('away_team')}",
+            "commence_time": event.get("commence_time"),
+            "market": "h2h",
+            "bookmakers": event.get("bookmakers", [])
+        }
+        
+        arb = process_event(standardized_event, total_stake=total_stake)
         if arb:
             arbs.append(arb)
             roi = arb["roi_percent"]
             palp = f" [{arb['palp_warning']}]" if arb.get("palp_warning") else ""
             print(f"[FOUND ARB] {arb['event']} - ROI: {roi:.2f}%{palp} | Profit: ${arb['guaranteed_profit']:.2f}")
 
-            # Alert via NTFY.sh if ROI >= 2.0%
             if enable_ntfy and roi >= 2.0 and ntfy_topic:
                 send_ntfy_alert(arb, ntfy_topic)
 
-    # Sort arbs descending by ROI %
     arbs.sort(key=lambda x: x["roi_percent"], reverse=True)
 
-    # Save lightweight JSON to arbs.json
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(arbs, f, indent=2)
 
@@ -366,22 +394,18 @@ def run_engine(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Sports Arbitrage Tracker Engine")
-    parser.add_argument("--input", default="sample_odds.json", help="Path to input odds JSON file")
+    parser = argparse.ArgumentParser(description="Sports Arbitrage Tracker Engine (Live)")
+    parser.add_argument("--sport", default="basketball_nba", help="Sport key for The Odds API")
     parser.add_argument("--output", default="arbs.json", help="Path to output JSON file for arbs")
-    parser.add_argument("--stake", type=float, default=100.0, help="Base total stake amount (default: 100.0)")
-    parser.add_argument("--ntfy-topic", default=DEFAULT_NTFY_TOPIC, help="NTFY.sh topic name for push alerts")
+    parser.add_argument("--stake", type=float, default=100.0, help="Base total stake amount")
+    parser.add_argument("--ntfy-topic", default=DEFAULT_NTFY_TOPIC, help="NTFY.sh topic name")
     parser.add_argument("--no-ntfy", action="store_true", help="Disable NTFY.sh alerts")
 
     args = parser.parse_args()
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    input_path = os.path.join(script_dir, args.input) if not os.path.isabs(args.input) else args.input
-    output_path = os.path.join(script_dir, args.output) if not os.path.isabs(args.output) else args.output
-
     run_engine(
-        input_file=input_path,
-        output_file=output_path,
+        sport=args.sport,
+        output_file=args.output,
         total_stake=args.stake,
         ntfy_topic=args.ntfy_topic,
         enable_ntfy=not args.no_ntfy
@@ -390,5 +414,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
 
 

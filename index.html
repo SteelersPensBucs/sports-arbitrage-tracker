@@ -43,6 +43,17 @@
         .arb-card.palp { border-left-color: var(--warning-color); }
         .event-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 5px; }
         .roi { font-size: 1.5rem; color: var(--positive-color); margin-bottom: 10px; }
+        .toggle-btn {
+            padding: 10px 20px;
+            background: var(--accent-color);
+            border: none;
+            border-radius: 5px;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
         .outcomes { display: grid; gap: 10px; margin-bottom: 15px; }
         .outcome { background: #333; padding: 10px; border-radius: 8px; }
         .btn-link {
@@ -65,12 +76,28 @@
         <div class="header">
             <h2>Total Bankroll</h2>
             <input type="number" id="bankroll" class="bankroll-input" value="100" onchange="renderArbs()">
+            <button class="toggle-btn" onclick="toggleOddsFormat()">Switch Odds Format</button>
         </div>
         <div id="arb-list"></div>
     </div>
 
     <script>
         let arbs = [];
+        let oddsFormat = 'american'; // Default
+
+        function toggleOddsFormat() {
+            oddsFormat = oddsFormat === 'american' ? 'decimal' : 'american';
+            renderArbs();
+        }
+
+        function decimalToAmerican(decimal) {
+            if (decimal >= 2.0) return '+' + Math.round((decimal - 1) * 100);
+            return Math.round(-100 / (decimal - 1));
+        }
+
+        function formatOdds(decimal) {
+            return oddsFormat === 'american' ? decimalToAmerican(decimal) : decimal.toFixed(2);
+        }
 
         function getGubbingState() {
             return JSON.parse(localStorage.getItem("gubbing_state")) || { overrides: {}, learned: {} };
@@ -113,6 +140,15 @@
             const state = getGubbingState();
             const container = document.getElementById("arb-list");
             container.innerHTML = "";
+            
+            const schemes = {
+                "fanduel": "fanduel://",
+                "betmgm": "betmgm://",
+                "caesars": "caesars://",
+                "fanatics": "fanatics://",
+                "betrivers": "betrivers://",
+                "thescore": "thescore://"
+            };
 
             arbs.forEach(arb => {
                 const multiplier = bankroll / 100;
@@ -157,9 +193,9 @@
                                     ${o.name} (${o.bookmaker_title}) 
                                     ${state.learned[o.bookmaker] ? '<span style="color:red; font-weight:bold;">[GUBBED]</span>' : ''}
                                 </div>
-                                <div><strong>$${i === 0 ? s1 : s2}</strong> @ ${o.odds_decimal}</div>
+                                <div><strong>$${i === 0 ? s1 : s2}</strong> @ ${formatOdds(o.odds_decimal)}</div>
                                 <input type="number" class="limit-input" placeholder="Manual Limit" onchange="setLimit('${o.bookmaker}', this.value)">
-                                <a href="#" class="btn-link" onclick="alert('Betting $${i === 0 ? s1 : s2} on ${o.bookmaker_title}')">Bet $${i === 0 ? s1 : s2} on ${o.bookmaker_title}</a>
+                                <a href="${schemes[o.bookmaker] || '#'}" class="btn-link">Bet $${i === 0 ? s1 : s2} on ${o.bookmaker_title}</a>
                             </div>
                         `).join("")}
                     </div>
